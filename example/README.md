@@ -1,2 +1,9 @@
 # Example
-here is an example of how to use the new `Middleware` and `Inject` functions by implementing a request adblocker and a semiworking banner ad blocker (removes discords header on home page for some reason)
+
+## Vencord
+
+-   Use vencord while using a proxy! simply inject the scripts and styles to vencord using the `inject` function and your done !
+
+## Not so great Adblock
+
+-   Implement simple adblock into your proxy by simply blocking requests that match a string
