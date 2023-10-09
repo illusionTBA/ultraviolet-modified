@@ -5,7 +5,6 @@
 /**
  * @type {import('../uv').UltravioletCtor}
  */
-
 const Ultraviolet = self.Ultraviolet;
 const cspHeaders = [
     'cross-origin-embedder-policy',
@@ -222,19 +221,6 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
                 });
                 delete responseCtx.headers['set-cookie'];
             }
-            // let rewritted = await response.text();
-
-            // if (
-            //     typeof this.config.rewrite === 'function' &&
-            //     responseCtx.body &&
-            //     request.destination === 'document' &&
-            //     isHtml(
-            //         ultraviolet.meta.url,
-            //         responseCtx.headers['content-type'] || ''
-            //     )
-            // ) {
-            //     rewritted = this.config.rewrite(rewritted, fetchedURL);
-            // }
 
             if (responseCtx.body) {
                 switch (request.destination) {
@@ -278,21 +264,33 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
                                 responseCtx.headers['content-type'] || ''
                             )
                         ) {
-                            let rewrite = await response.text();
+                            let modifiedResponse = await response.text();
+
                             if (typeof this.config.inject === 'function') {
-                                const headPosition = rewrite.indexOf('</head>');
-                                const inject = this.config.inject(
+                                const headPosition =
+                                    modifiedResponse.indexOf('</head>');
+                                const upperHead =
+                                    modifiedResponse.indexOf('</HEAD>');
+                                // const bodyPosition = modifiedResponse.indexOf('</body>');
+                                // const upperBody = modifiedResponse.indexOf('</BODY>');
+
+                                const inject = await this.config.inject(
                                     new URL(fetchedURL)
                                 );
-                                if (headPosition !== -1) {
-                                    rewrite =
-                                        rewrite.slice(0, headPosition) +
-                                        `${inject}` +
-                                        rewrite.slice(headPosition);
+
+                                if (headPosition !== -1 || upperHead !== -1) {
+                                    // Create a modified copy of responseBody
+                                    modifiedResponse =
+                                        modifiedResponse.slice(
+                                            0,
+                                            headPosition
+                                        ) +
+                                        `${await inject}` +
+                                        modifiedResponse.slice(headPosition);
                                 }
                             }
                             responseCtx.body = ultraviolet.rewriteHtml(
-                                rewrite,
+                                modifiedResponse,
                                 {
                                     document: true,
                                     injectHead: ultraviolet.createHtmlInject(
@@ -325,7 +323,6 @@ class UVServiceWorker extends Ultraviolet.EventEmitter {
 
             this.emit('response', resEvent);
             if (resEvent.intercepted) return resEvent.returnValue;
-
             return new Response(responseCtx.body, {
                 headers: responseCtx.headers,
                 status: responseCtx.status,
